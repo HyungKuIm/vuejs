@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vue Sample</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.45/vue.global.min.js"></script>
+    <script src="./myBoardList.js"></script>
+    <script src="./myBoardRead.js"></script>
+    <script src="./myBoardWrite.js"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div id="app">
+        <h2>{{ title }}</h2>
+        <input type="file" v-on:change="loadData">
+        <my-board-list v-if="listOk" :items="dataArray['board']"
+            v-on:board-read="boardRead"
+            v-on:board-write="boardWrite"
+            v-on:board-delete="boardDelete"></my-board-list>
+        <my-board-read v-if="readOk" :item="boardInfo"
+            v-on:board-list="boardList"></my-board-read>
+        <my-board-write v-if="writeOk" v-on:board-list="boardList"
+            v-on:board-save="boardSave"></my-board-write>
+
+    </div>
+    <script>
+        Vue.createApp({
+            components: {
+                'my-board-list': MyBoardList,
+                'my-board-read': MyBoardRead,
+                'my-board-write': MyBoardWrite
+            },
+            data() {
+                return {
+                    title: '게시판',
+                    dataArray: [],
+                    listOk: false,
+                    readOk: false,
+                    writeOk: false,
+                    boardInfo: {}
+                }
+            },
+            methods: {
+                loadData: function(e) {
+                    file = e.target.files[0];
+                    if (file) {
+                        var reader = new FileReader();
+                        var vm = this;
+                        reader.readAsText(file);
+                        reader.onload = function(e) {
+                            vm.dataArray = JSON.parse(e.target.result);
+                        };
+                        reader.onloadend = function(e) {
+                            if (vm.dataArray != null && vm.dataArray['board'].length > 0) {
+                                vm.listOk = true;
+                            } else {
+                                vm.listOk = false;
+                            }
+                        }
+                    }
+                },
+                boardRead: function(info) {
+                    console.log('boardRead2');
+                    this.listOk = false;
+                    this.readOk = true;
+                    console.log(info);
+                    this.boardInfo = info;
+                    // 해당 글을 찾아서 카운트를 올려준다.
+                    for (var i=0; i<this.dataArray['board'].length; i++) {
+                        if (this.dataArray['board'][i].no == info.no) {
+                            this.dataArray['board'][i].view = parseInt(this.dataArray['board'][i].view) + 1;
+                        }
+                    }
+                },
+                boardList: function() {
+                    this.readOk = false;
+                    this.writeOk = false;
+                    this.listOk = true;
+                },
+                boardWrite: function() {
+                    this.listOk = false;
+                    this.readOk = false;
+                    this.writeOk = true;
+                },
+                boardSave: function(title, content) {
+                    var no = 1;
+                    if (this.dataArray['board'].length != 0) {
+                        no = parseInt(this.dataArray['board'][this.dataArray['board'].length -1].no) + 1;
+                    }
+                    var board_info = {
+                        no: no,
+                        title: title,
+                        content: content,
+                        view: "1"
+                    };
+
+                    this.dataArray['board'].push(board_info);
+                    this.writeOk = false;
+                    this.readOk = false;
+                    this.listOk= true;
+                },
+                boardDelete: function(no) {
+                    for (var i=0; i<this.dataArray['board'].length; i++) {
+                        if (this.dataArray['board'][i].no == no) {
+                            this.dataArray['board'].splice(i,1);
+                        }
+                    }
+                }
+            },
+
+            beforeCreate() {
+                console.log("beforeCreate");
+            },
+            created() {
+                console.log("created");
+            },
+            mounted() {
+                console.log("mounted");
+                this.message = 'Hello Sora!'
+            },
+            updated() {
+                console.log("updated");
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>
